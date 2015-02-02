@@ -47,15 +47,25 @@
   (if-let [exp-time (:exp claims)]
     (< (current-time-secs) exp-time)
     true))
+(defn- valid-issuer? [{:keys [opts claims]}]
+  (if-let [issuer (:iss opts)]
+    (= issuer (:iss claims))
+    true))
+(defn- valid-audience? [{:keys [opts claims]}]
+  (if-let [audience (:aud opts)]
+    (= audience (:aud claims))
+    true))
 
-(defn valid? [secret token]
+(defn valid? [secret token & more]
   (if-not (nil? token)
     (let [[header-str claims-str :as segments] (clojure.string/split token #"\." 4)]
       (if (= 3 (count segments))
-        ((every-pred valid-signature? valid-exp?) {:secret secret
-                                                   :segments segments
-                                                   :header (parse-segment header-str)
-                                                   :claims (parse-segment claims-str)})
+        ((every-pred valid-signature? valid-exp? valid-audience? valid-issuer?)
+         {:secret secret
+          :segments segments
+          :header (parse-segment header-str)
+          :claims (parse-segment claims-str)
+          :opts (apply hash-map more)})
         false))
     false))
 

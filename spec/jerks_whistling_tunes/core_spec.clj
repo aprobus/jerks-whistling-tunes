@@ -51,6 +51,24 @@
       (with token (sign "HS256" secret {:exp (- (current-time-secs) 2)}))
 
       (it "rejects the token"
-        (should-not (valid? secret @token))))))
+        (should-not (valid? secret @token))))
+
+    (context "with an audience"
+      (with token (sign "HS256" secret {:aud "king"}))
+
+      (it "rejects the invalid audience"
+        (should-not (valid? secret @token :aud "joker")))
+
+      (it "accepts the right audience"
+        (should (valid? secret @token :aud "king"))))
+
+    (context "with an issuer"
+      (with token (sign "HS256" secret {:iss "king"}))
+
+      (it "rejects the invalid issuer"
+        (should-not (valid? secret @token :iss "joker")))
+
+      (it "accepts the right issuer"
+        (should (valid? secret @token :iss "king"))))))
 
 (run-specs)
