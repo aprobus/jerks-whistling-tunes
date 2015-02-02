@@ -33,6 +33,24 @@
       (should-not (valid? "secret" "much.crypto.so.token")))
 
     (it "rejects tokens by signature token"
-      (should-not (valid? "wrongsecret" jwt)))))
+      (should-not (valid? "wrongsecret" jwt)))
+
+    (it "rejects null tokens"
+      (should-not (valid? "secret" nil)))
+
+    (it "rejects unsupported algorithms"
+      (should-not (valid? secret "eyJhbGciOiJkb2dlIiwidHlwIjoiSldUIn0.e30.GCsA4jZgcT3deNioC4k4KofE_mnanJQDVzv3eloO9uk")))
+
+    (context "with an unexpired token"
+      (with token (sign "HS256" secret {:exp (+ (current-time-secs) 2)}))
+
+      (it "accepts the token"
+        (should (valid? secret @token))))
+
+    (context "with an expired token"
+      (with token (sign "HS256" secret {:exp (- (current-time-secs) 2)}))
+
+      (it "rejects the token"
+        (should-not (valid? secret @token))))))
 
 (run-specs)

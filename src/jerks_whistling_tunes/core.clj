@@ -5,6 +5,8 @@
 (java.security.Security/addProvider
  (org.bouncycastle.jce.provider.BouncyCastleProvider.))
 
+(defn current-time-secs [] (int (/ (System/currentTimeMillis) 1000)))
+
 (defn- first-arg [& args]
   (first args))
 
@@ -28,6 +30,8 @@
 (defmethod verify "HS256" [_ secret body signature]
   (let [gen-sig (create-signature "HS256" secret body)]
     (eq? signature gen-sig)))
+(defmethod verify :default [& args]
+  false)
 
 (defn- parse-segment [segment]
   (-> segment
@@ -35,13 +39,25 @@
     (String. "UTF-8")
     (json/read-str :key-fn keyword)))
 
+(defn- valid-signature? [{:keys [secret segments header]}]
+  (let [[header-str claims-str sig-str] segments
+        body (str header-str "." claims-str)]
+    (verify (:alg header) secret body sig-str)))
+(defn- valid-exp? [{:keys [claims]}]
+  (if-let [exp-time (:exp claims)]
+    (< (current-time-secs) exp-time)
+    true))
+
 (defn valid? [secret token]
-  (let [[header-str claims-str sig-str :as segments] (clojure.string/split token #"\." 4)]
-    (if (= 3 (count segments))
-      (let [header (parse-segment header-str)
-            body (str header-str "." claims-str)]
-        (verify (:alg header) secret body sig-str))
-      false)))
+  (if-not (nil? token)
+    (let [[header-str claims-str :as segments] (clojure.string/split token #"\." 4)]
+      (if (= 3 (count segments))
+        ((every-pred valid-signature? valid-exp?) {:secret secret
+                                                   :segments segments
+                                                   :header (parse-segment header-str)
+                                                   :claims (parse-segment claims-str)})
+        false))
+    false))
 
 (defn- create-segment [segment]
   (let [json-str (json/write-str segment)]
