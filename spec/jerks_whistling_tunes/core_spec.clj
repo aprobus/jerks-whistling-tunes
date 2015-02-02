@@ -9,6 +9,18 @@
     (it "verfies token"
       (should (valid? "secret" jwt)))
 
+    (it "rejects empty segments"
+      (should-not (valid? "secret" "")))
+
+    (it "rejects one segments"
+      (should-not (valid? "secret" "crypto")))
+
+    (it "rejects two segments"
+      (should-not (valid? "secret" "much.crypto")))
+
+    (it "rejects four segments"
+      (should-not (valid? "secret" "much.crypto.so.token")))
+
     (it "rejects tokens by signature token"
       (should-not (valid? "wrongsecret" jwt)))))
 

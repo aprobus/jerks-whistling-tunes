@@ -24,11 +24,16 @@
   (let [gen-sig (sign "HS256" secret body)]
     (eq? signature gen-sig)))
 
+(defn- parse-segment [segment]
+  (-> segment
+    decode-64
+    (String. "UTF-8")
+    (json/read-str :key-fn keyword)))
+
 (defn valid? [secret token]
-  (let [[header-str claims-str sig-str] (clojure.string/split token #"\." 3)
-        header (-> header-str
-                 decode-64
-                 (String. "UTF-8")
-                 (json/read-str :key-fn keyword))
-        body (str header-str "." claims-str)]
-    (verify (:alg header) secret body sig-str)))
+  (let [[header-str claims-str sig-str :as segments] (clojure.string/split token #"\." 4)]
+    (if (= 3 (count segments))
+      (let [header (parse-segment header-str)
+            body (str header-str "." claims-str)]
+        (verify (:alg header) secret body sig-str))
+      false)))
