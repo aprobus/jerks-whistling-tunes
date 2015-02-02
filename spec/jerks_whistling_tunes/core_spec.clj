@@ -69,6 +69,12 @@
         (should-not (valid? secret @token :iss "joker")))
 
       (it "accepts the right issuer"
-        (should (valid? secret @token :iss "king"))))))
+        (should (valid? secret @token :iss "king"))))
+
+    (context "with a encoded secret"
+      (with token (sign "HS256" secret {} :secret-fn decode-base-64))
+
+      (it "should accept token"
+        (should (valid? secret @token :secret-fn decode-base-64))))))
 
 (run-specs)

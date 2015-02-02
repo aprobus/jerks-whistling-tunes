@@ -3,7 +3,13 @@
             [crypto.equality :refer [eq?]]))
 
 (java.security.Security/addProvider
- (org.bouncycastle.jce.provider.BouncyCastleProvider.))
+  (org.bouncycastle.jce.provider.BouncyCastleProvider.))
+
+(defmulti to-bytes type)
+(defmethod to-bytes java.lang.String [str]
+  (.getBytes str "UTF-8"))
+(defmethod to-bytes (Class/forName "[B") [byte-array]
+  byte-array)
 
 (defn current-time-secs [] (int (/ (System/currentTimeMillis) 1000)))
 
@@ -11,20 +17,20 @@
   (first args))
 
 (def ^:private base-64 (org.apache.commons.codec.binary.Base64. true))
-(defn- decode-64 [str]
+(defn decode-base-64 [str]
   (.decode base-64 str))
-(defn- encode-64 [bytes]
+(defn- encode-base-64 [bytes]
   (let [result (String. (.encode base-64 bytes) "UTF-8")
         len-without-newline (- (count result) 2)]
     (.substring result 0 len-without-newline)))
 
 (defmulti create-signature first-arg)
 (defmethod create-signature "HS256" [_ secret body]
-  (let [hmac-key (javax.crypto.spec.SecretKeySpec. (.getBytes secret "UTF-8") "HS256")
+  (let [hmac-key (javax.crypto.spec.SecretKeySpec. (to-bytes secret) "HS256")
         encoder (doto (javax.crypto.Mac/getInstance "HmacSHA256")
                   (.init hmac-key)
                   (.update (.getBytes body "UTF-8")))]
-    (encode-64 (.doFinal encoder))))
+    (encode-base-64 (.doFinal encoder))))
 
 (defmulti verify (fn [& args] (first args)))
 (defmethod verify "HS256" [_ secret body signature]
@@ -33,9 +39,13 @@
 (defmethod verify :default [& args]
   false)
 
+(defn- create-segment [segment]
+  (let [json-str (json/write-str segment)]
+    (encode-base-64 (.getBytes json-str "UTF-8"))))
+
 (defn- parse-segment [segment]
   (-> segment
-    decode-64
+    decode-base-64
     (String. "UTF-8")
     (json/read-str :key-fn keyword)))
 
@@ -58,24 +68,23 @@
 
 (defn valid? [secret token & more]
   (if-not (nil? token)
-    (let [[header-str claims-str :as segments] (clojure.string/split token #"\." 4)]
+    (let [[header-str claims-str :as segments] (clojure.string/split token #"\." 4)
+          opts (apply hash-map more)]
       (if (= 3 (count segments))
         ((every-pred valid-signature? valid-exp? valid-audience? valid-issuer?)
-         {:secret secret
+         {:secret ((get opts :secret-fn identity) secret)
           :segments segments
           :header (parse-segment header-str)
           :claims (parse-segment claims-str)
-          :opts (apply hash-map more)})
+          :opts opts})
         false))
     false))
 
-(defn- create-segment [segment]
-  (let [json-str (json/write-str segment)]
-    (encode-64 (.getBytes json-str "UTF-8"))))
-
-(defn sign [alg secret claims]
+(defn sign [alg secret claims & more]
   (let [header {:alg alg
                 :typ "JWT"}
         body (str (create-segment header) "." (create-segment claims))
+        opts (apply hash-map more)
+        secret ((get opts :secret-fn identity) secret)
         signature (create-signature alg secret body)]
     (str body "." signature)))
