@@ -20,7 +20,7 @@ Verify only expiration:
 ### Creating a token
 
 ```clojure
-(sign "HS256 "secret" {:super_admin true})
+(sign "HS256" "secret" {:super_admin true})
 ```
 
 ## Supported Algorithms
