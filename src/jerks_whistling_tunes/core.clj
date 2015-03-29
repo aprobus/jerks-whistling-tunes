@@ -66,19 +66,30 @@
     (= audience (:aud claims))
     true))
 
-(defn valid? [secret token & more]
+(defn- validate* [secret [header-str claims-str :as segments] opts]
+  (let [claims (parse-segment claims-str)
+        header (parse-segment header-str)
+        secret ((get opts :secret-fn identity) secret)
+        valid-token? ((every-pred valid-signature? valid-exp? valid-audience? valid-issuer?)
+                      {:secret secret
+                       :segments segments
+                       :header header
+                       :claims claims
+                       :opts opts})]
+    (if valid-token?
+      claims
+      false)))
+
+(defn validate [secret token & more]
   (if-not (nil? token)
-    (let [[header-str claims-str :as segments] (clojure.string/split token #"\." 4)
+    (let [segments (clojure.string/split token #"\." 4)
           opts (apply hash-map more)]
       (if (= 3 (count segments))
-        ((every-pred valid-signature? valid-exp? valid-audience? valid-issuer?)
-         {:secret ((get opts :secret-fn identity) secret)
-          :segments segments
-          :header (parse-segment header-str)
-          :claims (parse-segment claims-str)
-          :opts opts})
+        (validate* secret segments opts)
         false))
     false))
+
+(def valid? (comp boolean validate))
 
 (defn sign [alg secret claims & more]
   (let [header {:alg alg

@@ -75,6 +75,17 @@
       (with token (sign "HS256" secret {} :secret-fn decode-base-64))
 
       (it "should accept token"
-        (should (valid? secret @token :secret-fn decode-base-64))))))
+        (should (valid? secret @token :secret-fn decode-base-64))))
+
+    (describe "validate"
+      (with expired-token (sign "HS256" secret {:exp (- (current-time-secs) 2)}))
+      (with token (sign "HS256" secret {:sub "king"}))
+
+      (it "is falsy with a bad token"
+        (should-not (validate secret @expired-token)))
+
+      (it "returns the claims when token is valid"
+        (should= {:sub "king"}
+                 (validate secret @token))))))
 
 (run-specs)

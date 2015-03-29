@@ -8,13 +8,19 @@ A Clojure library designed to create and verify Json Web Tokens.
 
 Verify expiration, audience, and issuer
 ```clojure
-(valid? "secret" "my.jwt.token" :aud "The king" 
+(valid? "secret" "my.jwt.token" :aud "The king"
                                 :iss "His humble servant")
 ```
 
 Verify only expiration:
 ```clojure
 (valid? "secret" "my.jwt.token")
+```
+
+To verify the token and retrieve the claims (supports same options as `valid?`):
+```clojure
+(validate "secret" "my.jwt.token" :aud "The king"
+                                  :iss "His humble servant")
 ```
 
 ### Creating a token
