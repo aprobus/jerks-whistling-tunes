@@ -4,6 +4,8 @@ A Clojure library designed to create and verify Json Web Tokens.
 
 ## Usage
 
+`[jerks-whistling-tunes "0.1.2"]`
+
 ### Verifying a token
 
 Verify expiration, audience, and issuer
