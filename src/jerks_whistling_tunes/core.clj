@@ -68,10 +68,10 @@
 
 (def valid? (comp boolean validate))
 
-(defn sign [alg claims sign-fn & more]
-  (let [header {:alg alg
+(defn sign [claims sign-fn]
+  (let [{:keys [alg]} (meta sign-fn)
+        header {:alg alg
                 :typ "JWT"}
         body (str (create-segment header) "." (create-segment claims))
-        opts (apply hash-map more)
         signature (sign-fn body)]
     (str body "." signature)))
