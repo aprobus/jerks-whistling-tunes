@@ -2,24 +2,28 @@
   (:require [jerks-whistling-tunes.algorithm :refer :all]
             [speclj.core :refer :all]))
 
-(def unsigned-jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")
-
 (def secret "secret")
 
 (describe "jerks-whistling-tunes.algorithm"
   (describe "hs256"
+    (with unsigned-jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")
+
     (it "encodes the string"
       (should= "eoaDVGTClRdfxUZXiPs3f8FmJDkDE_VCQFXqKxpLsts"
-               ((hs256 secret) unsigned-jwt))))
+               ((hs256 secret) @unsigned-jwt))))
 
   (describe "hs384"
+    (with unsigned-jwt "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")
+
     (it "encodes the string"
-      (should= "Wk-GxVm14_MHtn7esykHAFOUwob1Z8PXMdvFbnAh2JnluyV6KAe6NEHZXG-8ZZDT"
-               ((hs384 secret) unsigned-jwt))))
+      (should= "KJinFn10CgjbSBF0nUixqiqlFNZFoatdanR2ce739Ix-OIsqRpiZcApEUvVHKEKw"
+               ((hs384 secret) @unsigned-jwt))))
 
   (describe "hs512"
+    (with unsigned-jwt "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")
+
     (it "encodes the string"
-      (should= "0JRoNr4i-fz-Pz0w0No331-_8pq9wnSM3Ic5W9dZOCT8gFTfu8bJpd8nV5ELUonPY1fOnIQScKeA\r\ncc8niKLK3w"
-               ((hs512 secret) unsigned-jwt)))))
+      (should= "fSCfxDB4cFVvzd6IqiNTuItTYiv-tAp5u5XplJWRDBGNF1rgGn1gyYK9LuHobWWpwqCzI7pEHDlyrbNHaQJmqg"
+               ((hs512 secret) @unsigned-jwt)))))
 
 (run-specs)
