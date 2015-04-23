@@ -77,6 +77,16 @@
     (it "is invalid for claims missing exp"
       (should-not (exp {}))))
 
+  (describe "nbf"
+    (it "is valid after nbf"
+      (should (nbf {:nbf (current-time-secs)})))
+
+    (it "is invalid before nbf"
+      (should-not (nbf {:nbf (+ (current-time-secs) 10)})))
+
+    (it "is invalid for claims missing nbf"
+      (should-not (nbf {}))))
+
   (describe "aud"
     (it "is valid when aud matches"
       (should ((aud "hi") {:aud "hi"})))

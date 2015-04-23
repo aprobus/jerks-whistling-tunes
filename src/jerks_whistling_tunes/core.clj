@@ -68,3 +68,8 @@
   (if exp
     (>= exp (current-time-secs))
     false))
+
+(defn nbf [{:keys [nbf]}]
+  (if nbf
+    (>= (current-time-secs) nbf)
+    false))
