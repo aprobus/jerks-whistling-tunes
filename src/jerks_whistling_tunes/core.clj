@@ -24,45 +24,25 @@
     true
     (cry/eq? actual expected)))
 
-(defn- valid-signature? [{:keys [sign-fn segments header]}]
+(defn- valid-signature? [sign-fn segments header]
   (let [[header-str claims-str sig-str] segments
         body (str header-str "." claims-str)]
     (eq? (sign-fn body) sig-str)))
 
-(defn- valid-exp? [{:keys [claims]}]
-  (if-let [exp-time (:exp claims)]
-    (< (current-time-secs) exp-time)
-    true))
-
-(defn- valid-issuer? [{:keys [opts claims]}]
-  (if-let [issuer (:iss opts)]
-    (= issuer (:iss claims))
-    true))
-
-(defn- valid-audience? [{:keys [opts claims]}]
-  (if-let [audience (:aud opts)]
-    (= audience (:aud claims))
-    true))
-
-(defn- validate* [sign-fn [header-str claims-str :as segments] opts]
+(defn- validate* [sign-fn [header-str claims-str :as segments] claim-fns]
   (let [claims (parse-segment claims-str)
         header (parse-segment header-str)
-        valid-token? ((every-pred valid-signature? valid-exp? valid-audience? valid-issuer?)
-                      {:sign-fn sign-fn
-                       :segments segments
-                       :header header
-                       :claims claims
-                       :opts opts})]
-    (if valid-token?
+        valid-claims? (apply every-pred (constantly true) claim-fns)]
+    (if (and (valid-signature? sign-fn segments header)
+             (valid-claims? claims))
       claims
       false)))
 
-(defn validate [sign-fn token & more]
+(defn validate [sign-fn token & claim-fns]
   (if-not (nil? token)
-    (let [segments (clojure.string/split token #"\." 4)
-          opts (apply hash-map more)]
+    (let [segments (clojure.string/split token #"\." 4)]
       (if (= 3 (count segments))
-        (validate* sign-fn segments opts)
+        (validate* sign-fn segments claim-fns)
         false))
     false))
 
@@ -75,3 +55,16 @@
         body (str (create-segment header) "." (create-segment claims))
         signature (sign-fn body)]
     (str body "." signature)))
+
+(defn aud [expected-aud]
+  (fn [{:keys [aud]}]
+    (= aud expected-aud)))
+
+(defn iss [expected-iss]
+  (fn [{:keys [iss]}]
+    (= iss expected-iss)))
+
+(defn exp [{:keys [exp]}]
+  (if exp
+    (>= exp (current-time-secs))
+    false))

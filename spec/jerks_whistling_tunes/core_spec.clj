@@ -18,6 +18,8 @@
                (sign {:iss "foo"} sign-constant))))
 
   (describe "valid?"
+    (with token (sign { } sign-constant))
+
     (it "verfies token"
       (should (valid? sign-constant jwt-hs256)))
 
@@ -39,44 +41,50 @@
     (it "rejects null tokens"
       (should-not (valid? sign-constant nil)))
 
-    (context "with an unexpired token"
-      (with token (sign {:exp (+ (current-time-secs) 2)} sign-constant))
+    (it "is invalid with failing claims checks"
+      (should-not (valid? sign-constant @token (constantly false))))
 
-      (it "accepts the token"
-        (should (valid? sign-constant @token))))
+    (it "is valid with passing claims checks"
+      (should (valid? sign-constant @token (constantly true)))))
 
-    (context "with an expired token"
-      (with token (sign {:exp (- (current-time-secs) 2)} sign-constant))
+  (describe "validate"
+    (with token (sign {:sub "king"} sign-constant))
 
-      (it "rejects the token"
-        (should-not (valid? sign-constant @token))))
+    (it "is falsy with a bad token"
+      (should-not (validate (constantly "invalid") @token)))
 
-    (context "with an audience"
-      (with token (sign {:aud "king"} sign-constant))
+    (it "returns the claims when token is valid"
+      (should= {:sub "king"}
+               (validate sign-constant @token))))
 
-      (it "rejects the invalid audience"
-        (should-not (valid? sign-constant @token :aud "joker")))
+  (describe "iss"
+    (it "is valid when iss matches"
+      (should ((iss "hi") {:iss "hi"})))
 
-      (it "accepts the right audience"
-        (should (valid? sign-constant @token :aud "king"))))
+    (it "is invalid when iss is different"
+      (should-not ((iss "hi") {:iss "bye"})))
 
-    (context "with an issuer"
-      (with token (sign {:iss "king"} sign-constant))
+    (it "is invalid when iss is missing"
+      (should-not ((iss "hi") {}))))
 
-      (it "rejects the invalid issuer"
-        (should-not (valid? sign-constant @token :iss "joker")))
+  (describe "exp"
+    (it "is valid for future tokens"
+      (should (exp {:exp (+ (current-time-secs) 22)})))
 
-      (it "accepts the right issuer"
-        (should (valid? sign-constant @token :iss "king"))))
+    (it "is invalid for expired tokens"
+      (should-not (exp {:exp (- (current-time-secs) 1)})))
 
-    (describe "validate"
-      (with token (sign {:sub "king"} sign-constant))
+    (it "is invalid for claims missing exp"
+      (should-not (exp {}))))
 
-      (it "is falsy with a bad token"
-        (should-not (validate (constantly "invalid") @token)))
+  (describe "aud"
+    (it "is valid when aud matches"
+      (should ((aud "hi") {:aud "hi"})))
 
-      (it "returns the claims when token is valid"
-        (should= {:sub "king"}
-                 (validate sign-constant @token))))))
+    (it "is invalid when aud is different"
+      (should-not ((aud "hi") {:aud "bye"})))
+
+    (it "is invalid when aud is mauding"
+      (should-not ((aud "hi") {})))))
 
 (run-specs)
