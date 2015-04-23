@@ -87,6 +87,16 @@
     (it "is invalid for claims missing nbf"
       (should-not (nbf {}))))
 
+  (describe "iat"
+    (it "is valid when iat is in the past"
+      (should (iat {:iat (- (current-time-secs) 20)})))
+
+    (it "is invalid when iat is in the future"
+      (should-not (iat {:iat (+ (current-time-secs) 10)})))
+
+    (it "is invalid for claims missing iat"
+      (should-not (iat {}))))
+
   (describe "aud"
     (it "is valid when aud matches"
       (should ((aud "hi") {:aud "hi"})))

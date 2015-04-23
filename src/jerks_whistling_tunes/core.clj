@@ -77,3 +77,8 @@
   (if nbf
     (>= (current-time-secs) nbf)
     false))
+
+(defn iat [{:keys [iat]}]
+  (if iat
+    (<= iat (current-time-secs))
+    false))
