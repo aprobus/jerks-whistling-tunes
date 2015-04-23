@@ -29,8 +29,8 @@
     (it "rejects one segments"
       (should-not (valid? "crypto")))
 
-    (it "accepts two segments"
-      (should (valid? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")))
+    (it "accepts empty signature"
+      (should (valid? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.")))
 
     (it "rejects four segments"
       (should-not (valid? "much.crypto.so.token")))

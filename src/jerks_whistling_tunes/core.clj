@@ -28,7 +28,6 @@
 (defn- validate* [[header-str claims-str token-signature] validation-fns]
   (let [claims (parse-segment claims-str)
         header (parse-segment header-str)
-        token-signature (or token-signature "")
         valid-claims? (apply every-pred (constantly true) validation-fns)]
     (if (and claims header (valid-claims? header claims [(str header-str "." claims-str) token-signature]))
       claims
@@ -37,7 +36,7 @@
 (defn validate [token & validation-fns]
   (if-not (nil? token)
     (let [segments (clojure.string/split token #"\." 4)]
-      (if (< 1 (count segments) 4)
+      (if (= 3 (count segments))
         (validate* segments validation-fns)
         false))
     false))
