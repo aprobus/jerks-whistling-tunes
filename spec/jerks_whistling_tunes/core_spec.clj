@@ -8,17 +8,17 @@
                               {:alg "HS256"}))
 
 (describe "jerks-whistling-tunes.core"
-  (describe "sign"
+  (describe "encode"
     (it "signs empty claims"
       (should= "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.asdf"
-               (sign {} sign-constant)))
+               (encode {} sign-constant)))
 
     (it "signs simple claim"
       (should= "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28ifQ.asdf"
-               (sign {:iss "foo"} sign-constant))))
+               (encode {:iss "foo"} sign-constant))))
 
   (describe "valid?"
-    (with token (sign { } sign-constant))
+    (with token (encode { } sign-constant))
 
     (it "verfies token"
       (should (valid? jwt-hs256)))
@@ -54,7 +54,7 @@
       (should (valid? @token (constantly true)))))
 
   (describe "validate"
-    (with token (sign {:sub "king"} sign-constant))
+    (with token (encode {:sub "king"} sign-constant))
 
     (it "is falsy with a bad token"
       (should-not (validate @token (constantly false))))

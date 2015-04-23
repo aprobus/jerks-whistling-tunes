@@ -43,7 +43,7 @@
 
 (def valid? (comp boolean validate))
 
-(defn sign [claims sign-fn]
+(defn encode [claims sign-fn]
   (let [{:keys [alg]} (meta sign-fn)
         header {:alg alg
                 :typ "JWT"}
