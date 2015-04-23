@@ -1,4 +1,4 @@
-(ns jerks-whistling-tunes.algorithm
+(ns jerks-whistling-tunes.sign
   (:require [byte-streams :refer [convert]]
             [jerks-whistling-tunes.utils :as utils]))
 
