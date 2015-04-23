@@ -64,6 +64,10 @@
   (fn [{:keys [iss]}]
     (= iss expected-iss)))
 
+(defn sub [expected-sub]
+  (fn [{:keys [sub]}]
+    (= sub expected-sub)))
+
 (defn exp [{:keys [exp]}]
   (if exp
     (>= exp (current-time-secs))

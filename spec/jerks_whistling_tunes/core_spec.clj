@@ -95,6 +95,16 @@
       (should-not ((aud "hi") {:aud "bye"})))
 
     (it "is invalid when aud is mauding"
-      (should-not ((aud "hi") {})))))
+      (should-not ((aud "hi") {}))))
+
+  (describe "sub"
+    (it "is valid when sub matches"
+      (should ((sub "hi") {:sub "hi"})))
+
+    (it "is invalid when sub is different"
+      (should-not ((sub "hi") {:sub "bye"})))
+
+    (it "is invalid when sub is msubing"
+      (should-not ((sub "hi") {})))))
 
 (run-specs)
