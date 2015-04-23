@@ -36,6 +36,15 @@
 
     (it "specifies an alg"
       (should= "HS512"
-               (:alg (meta (hs512 secret)))))))
+               (:alg (meta (hs512 secret))))))
+
+  (describe "none"
+    (it "encodes the string"
+      (should= ""
+               (none "asdf")))
+
+    (it "specifies the algorithm"
+      (should= "none"
+               (:alg (meta none))))))
 
 (run-specs)

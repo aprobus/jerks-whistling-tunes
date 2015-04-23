@@ -20,3 +20,6 @@
 (def hs256 (partial create-hmac-signer "HS256" "HmacSHA256"))
 (def hs384 (partial create-hmac-signer "HS384" "HmacSHA384"))
 (def hs512 (partial create-hmac-signer "HS512" "HmacSHA512"))
+
+(def none (with-meta (constantly "")
+                     {:alg "none"}))
