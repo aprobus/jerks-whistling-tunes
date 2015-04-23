@@ -14,35 +14,31 @@
     (utils/encode-base-64 (.getBytes json-str "UTF-8"))))
 
 (defn- parse-segment [segment]
-  (-> segment
-    utils/decode-base-64
-    (String. "UTF-8")
-    (json/read-str :key-fn keyword)))
+  (try (-> segment
+         utils/decode-base-64
+         (String. "UTF-8")
+         (json/read-str :key-fn keyword))
+       (catch Exception e nil)))
 
 (defn- eq? [expected actual]
   (if (= "" actual expected)
     true
     (cry/eq? actual expected)))
 
-(defn- valid-signature? [sign-fn segments header]
-  (let [[header-str claims-str sig-str] segments
-        body (str header-str "." claims-str)]
-    (eq? (sign-fn body) sig-str)))
-
-(defn- validate* [sign-fn [header-str claims-str :as segments] claim-fns]
+(defn- validate* [[header-str claims-str token-signature] validation-fns]
   (let [claims (parse-segment claims-str)
         header (parse-segment header-str)
-        valid-claims? (apply every-pred (constantly true) claim-fns)]
-    (if (and (valid-signature? sign-fn segments header)
-             (valid-claims? claims))
+        token-signature (or token-signature "")
+        valid-claims? (apply every-pred (constantly true) validation-fns)]
+    (if (and claims header (valid-claims? header claims [(str header-str "." claims-str) token-signature]))
       claims
       false)))
 
-(defn validate [sign-fn token & claim-fns]
+(defn validate [token & validation-fns]
   (if-not (nil? token)
     (let [segments (clojure.string/split token #"\." 4)]
-      (if (= 3 (count segments))
-        (validate* sign-fn segments claim-fns)
+      (if (< 1 (count segments) 4)
+        (validate* segments validation-fns)
         false))
     false))
 
@@ -57,28 +53,46 @@
     (str body "." signature)))
 
 (defn aud [expected-aud]
-  (fn [{:keys [aud]}]
+  (fn [_ {:keys [aud]} _]
     (= aud expected-aud)))
 
 (defn iss [expected-iss]
-  (fn [{:keys [iss]}]
+  (fn [_ {:keys [iss]} _]
     (= iss expected-iss)))
 
 (defn sub [expected-sub]
-  (fn [{:keys [sub]}]
+  (fn [_ {:keys [sub]} _]
     (= sub expected-sub)))
 
-(defn exp [{:keys [exp]}]
+(defn exp [_ {:keys [exp]} _]
   (if exp
     (>= exp (current-time-secs))
     false))
 
-(defn nbf [{:keys [nbf]}]
+(defn nbf [_ {:keys [nbf]} _]
   (if nbf
     (>= (current-time-secs) nbf)
     false))
 
-(defn iat [{:keys [iat]}]
+(defn iat [_ {:keys [iat]} _]
   (if iat
     (<= iat (current-time-secs))
     false))
+
+(defn- safe-map-sign-fns [sign-fns]
+  (reduce (fn [acc sign-fn]
+            (let [{:keys [alg]} (meta sign-fn)]
+              (if (contains? acc alg)
+                (throw (Exception. (str "Duplicate algorithms not supported: " alg)))
+                (assoc acc
+                       alg
+                       sign-fn))))
+          {}
+          sign-fns))
+
+(defn signature [& sign-fns]
+  (let [sign-map (safe-map-sign-fns sign-fns)]
+    (fn [{:keys [alg]} _ [header-str claims-str token-signature]]
+      (if-let [signer-fn (get sign-map alg)]
+        (eq? token-signature (signer-fn (str header-str "." claims-str)))
+        false))))
