@@ -3,14 +3,19 @@
             [speclj.core :refer :all]))
 
 (def secret "secret")
+(def raw-secret (.getBytes secret))
 
 (describe "jerks-whistling-tunes.sign"
   (describe "hs256"
     (with unsigned-jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ")
 
-    (it "encodes the string"
+    (it "encodes the string with a String secret"
       (should= "eoaDVGTClRdfxUZXiPs3f8FmJDkDE_VCQFXqKxpLsts"
                ((hs256 secret) @unsigned-jwt)))
+
+    (it "encodes the string with a byte[] secret"
+      (should= "eoaDVGTClRdfxUZXiPs3f8FmJDkDE_VCQFXqKxpLsts"
+               ((hs256 raw-secret) @unsigned-jwt)))
 
     (it "specifies the alg"
       (should= "HS256"
