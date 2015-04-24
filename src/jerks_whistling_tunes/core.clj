@@ -95,23 +95,20 @@
 (defn exp
   "Returns true if the JWT has not expired, false otherwise"
   [_ {:keys [exp]} _]
-  (if exp
-    (>= exp (current-time-secs))
-    false))
+  (and (number? exp)
+       (>= exp (current-time-secs))))
 
 (defn nbf
   "Returns true if the nbf time has passed, false otherwise"
   [_ {:keys [nbf]} _]
-  (if nbf
-    (>= (current-time-secs) nbf)
-    false))
+  (and (number? nbf)
+       (>= (current-time-secs) nbf)))
 
 (defn iat
   "Returns true if the JWT was issued in the past, false otherwise"
   [_ {:keys [iat]} _]
-  (if iat
-    (<= iat (current-time-secs))
-    false))
+  (and (number? iat)
+       (<= iat (current-time-secs))))
 
 (defn- safe-map-sign-fns
   "Takes a collection of signature functions and returns a map of the algorithm to the function."

@@ -81,7 +81,10 @@
       (should-not (exp {} {:exp (- (current-time-secs) 1)} [])))
 
     (it "is invalid for claims missing exp"
-      (should-not (exp {} {} []))))
+      (should-not (exp {} {} [])))
+
+    (it "rejects values of the wrong type"
+      (should-not (exp {} {:exp "blah"} []))))
 
   (describe "nbf"
     (it "is valid after nbf"
@@ -91,7 +94,10 @@
       (should-not (nbf {} {:nbf (+ (current-time-secs) 10)} [])))
 
     (it "is invalid for claims missing nbf"
-      (should-not (nbf {} {} []))))
+      (should-not (nbf {} {} [])))
+
+    (it "rejects values of the wrong type"
+      (should-not (nbf {} {:nbf "blah"} []))))
 
   (describe "iat"
     (it "is valid when iat is in the past"
@@ -101,7 +107,10 @@
       (should-not (iat {} {:iat (+ (current-time-secs) 10)} [])))
 
     (it "is invalid for claims missing iat"
-      (should-not (iat {} {} []))))
+      (should-not (iat {} {} [])))
+
+    (it "rejects values of the wrong type"
+      (should-not (iat {} {:iat "blah"} []))))
 
   (describe "aud"
     (it "is valid when aud matches"
