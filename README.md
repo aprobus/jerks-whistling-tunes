@@ -87,7 +87,7 @@ All algorithms are under in the `jerks-whistling-tunes.sign` namespace.
 (sign/hs256 "secret")
 (sign/hs384 "secret")
 (sign/hs512 "secret")
-none
+sign/none
 ```
 
 ## License
