@@ -1,24 +1,36 @@
 (ns jerks-whistling-tunes.core-spec
   (:require [jerks-whistling-tunes.core :refer :all]
+            [jerks-whistling-tunes.sign :as sign]
             [speclj.core :refer :all]))
 
 (def jwt-hs256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.asdf")
 
-(def sign-constant (with-meta (constantly "asdf")
-                              {:alg "HS256"}))
+(defrecord Signer [alg sig]
+  sign/Algorithm
+
+  (jwt-alg [this] alg)
+
+  (sign [this body]
+    sig)
+
+  (valid-signature? [this body signature]
+    (= (.sign this body) signature)))
 
 (describe "jerks-whistling-tunes.core"
+  (with signer (Signer. "HS256" "asdf"))
+
   (describe "encode"
+
     (it "signs empty claims"
       (should= "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.asdf"
-               (encode {} sign-constant)))
+               (encode {} @signer)))
 
     (it "signs simple claim"
       (should= "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmb28ifQ.asdf"
-               (encode {:iss "foo"} sign-constant))))
+               (encode {:iss "foo"} @signer))))
 
   (describe "valid?"
-    (with token (encode { } sign-constant))
+    (with token (encode { } @signer))
 
     (it "verfies token"
       (should (valid? jwt-hs256)))
@@ -54,7 +66,7 @@
       (should (valid? @token (constantly true)))))
 
   (describe "validate"
-    (with token (encode {:sub "king"} sign-constant))
+    (with token (encode {:sub "king"} @signer))
 
     (it "is falsy with a bad token"
       (should-not (validate @token (constantly false))))
@@ -133,7 +145,7 @@
       (should-not ((sub "hi") {} {} []))))
 
   (describe "signature"
-    (with signer (with-meta (fn [unsigned-token] "signature") {:alg "custom"}))
+    (with signer (Signer. "custom" "signature"))
 
     (it "rejects when alg is not supported"
       (should-not ((signature) {:alg "invalid"} {} [])))

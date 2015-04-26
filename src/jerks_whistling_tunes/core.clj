@@ -29,13 +29,6 @@
       (json/read-str :key-fn keyword))
     (catch Exception e nil)))
 
-(defn- eq?
-  "Compares two strings safely"
-  [expected actual]
-  (if (= "" actual expected)
-    true
-    (cry/eq? actual expected)))
-
 (defn- validate*
   "Parses JWT segments and validates them against a collection of predicates.
   Returns true if all the validation checks returned true, false otherwise."
@@ -66,12 +59,11 @@
 
 (defn encode
   "Encodes a map of claims as a JWT."
-  [claims sign-fn]
-  (let [{:keys [alg]} (meta sign-fn)
-        header {:alg alg
+  [claims signer]
+  (let [header {:alg (.alg signer)
                 :typ "JWT"}
         body (str (create-segment header) "." (create-segment claims))
-        signature (sign-fn body)]
+        signature (.sign signer body)]
     (str body "." signature)))
 
 (defn aud
@@ -112,16 +104,16 @@
 
 (defn- safe-map-sign-fns
   "Takes a collection of signature functions and returns a map of the algorithm to the function."
-  [sign-fns]
-  (reduce (fn [acc sign-fn]
-            (let [{:keys [alg]} (meta sign-fn)]
+  [signers]
+  (reduce (fn [acc signer]
+            (let [alg (.alg signer)]
               (if (contains? acc alg)
                 (throw (Exception. (str "Duplicate algorithms not supported: " alg)))
                 (assoc acc
                        alg
-                       sign-fn))))
+                       signer))))
           {}
-          sign-fns))
+          signers))
 
 (defn signature
   "Returns a predicate that validates the signature of a JWT.
@@ -130,6 +122,6 @@
   [& sign-fns]
   (let [sign-map (safe-map-sign-fns sign-fns)]
     (fn [{:keys [alg]} _ [header-str claims-str token-signature]]
-      (if-let [signer-fn (get sign-map alg)]
-        (eq? token-signature (signer-fn (str header-str "." claims-str)))
+      (if-let [signer (get sign-map alg)]
+        (.valid-signature? signer (str header-str "." claims-str) token-signature)
         false))))

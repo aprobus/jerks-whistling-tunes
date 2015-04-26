@@ -87,6 +87,13 @@ All algorithms are under in the `jerks-whistling-tunes.sign` namespace.
 (sign/hs256 "secret")
 (sign/hs384 "secret")
 (sign/hs512 "secret")
+
+; Supports either a java.security.KeyPair or a java.security.PublicKey
+; KeyPairs support all operations, while a Public can only be used for verification
+(sign/rs256 public-key)
+(sign/rs384 key-pair)
+(sign/rs512 key-pair)
+
 sign/none
 ```
 
