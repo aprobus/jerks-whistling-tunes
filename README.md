@@ -4,7 +4,7 @@ A Clojure library designed to create and verify Json Web Tokens (JWT).
 
 ## Usage
 
-`[jerks-whistling-tunes "0.2.0"]`
+`[jerks-whistling-tunes "0.2.1"]`
 
 ```clojure
 (ns my-app
