@@ -1,6 +1,7 @@
-(ns jerks-whistling-tunes.utils)
+(ns jerks-whistling-tunes.utils
+  (:import org.apache.commons.codec.binary.Base64))
 
-(def ^:private base-64-encoder (org.apache.commons.codec.binary.Base64. -1 (.getBytes "") true))
+(def ^:private base-64-encoder (Base64. -1 (.getBytes "") true))
 
 (defn decode-base-64
   "Returns the decoded base 64 url safe encoded string."

@@ -1,7 +1,8 @@
 (ns jerks-whistling-tunes.core
   (:require [clojure.data.json :as json]
-            [jerks-whistling-tunes.utils :as utils]
-            [crypto.equality :as cry]))
+            [clojure.string :as string]
+            [crypto.equality :as cry]
+            [jerks-whistling-tunes.utils :as utils]))
 
 (java.security.Security/addProvider
   (org.bouncycastle.jce.provider.BouncyCastleProvider.))
@@ -46,7 +47,7 @@
   Otherwise validate returns false"
   [token & validation-fns]
   (if-not (nil? token)
-    (let [segments (clojure.string/split token #"\." 4)]
+    (let [segments (string/split token #"\." 4)]
       (if (= 3 (count segments))
         (validate* segments validation-fns)
         false))

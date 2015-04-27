@@ -1,7 +1,12 @@
 (ns jerks-whistling-tunes.sign
   (:require [byte-streams :refer [convert]]
             [crypto.equality :as cry]
-            [jerks-whistling-tunes.utils :as utils]))
+            [jerks-whistling-tunes.utils :as utils])
+  (:import java.security.KeyPair
+           java.security.Signature
+           java.security.SignatureException
+           javax.crypto.Mac
+           javax.crypto.spec.SecretKeySpec))
 
 (def ^:private byte-array-class (Class/forName "[B"))
 
@@ -16,7 +21,7 @@
   "Returns a string encoded with the specified HMAC algorithm and key"
   [crypto-alg secret-spec body]
   (let [body-bytes (convert body byte-array-class)
-        encoder (doto (javax.crypto.Mac/getInstance crypto-alg)
+        encoder (doto (Mac/getInstance crypto-alg)
                   (.init secret-spec)
                   (.update body-bytes))]
     (utils/encode-base-64 (.doFinal encoder))))
@@ -25,7 +30,7 @@
   "Returns a string encoded with the specified RSA algorithm and key"
   [crypto-alg private-key body]
   (let [body-bytes (convert body byte-array-class)
-        signer (doto (java.security.Signature/getInstance crypto-alg)
+        signer (doto (Signature/getInstance crypto-alg)
                  (.initSign private-key)
                  (.update body-bytes))]
     (-> signer
@@ -36,13 +41,13 @@
   "Validates an rsa signature"
   [crypto-alg public-key body signature]
   (let [body-bytes (convert body byte-array-class)
-        signer (doto (java.security.Signature/getInstance crypto-alg)
+        signer (doto (Signature/getInstance crypto-alg)
                  (.initVerify public-key)
                  (.update body-bytes))
         raw-signature (utils/decode-base-64 signature)]
     (try
       (.verify signer raw-signature)
-      (catch java.security.SignatureException e
+      (catch SignatureException e
         false))))
 
 (defprotocol Algorithm
@@ -86,7 +91,7 @@
 (defn- new-hmac
   [jwt-alg crypto-alg secret]
   (let [raw-secret (convert secret byte-array-class)
-        secret-spec (javax.crypto.spec.SecretKeySpec. raw-secret jwt-alg)]
+        secret-spec (SecretKeySpec. raw-secret jwt-alg)]
     (Hmac. jwt-alg crypto-alg secret-spec)))
 
 (def hs256
@@ -102,7 +107,7 @@
   (partial new-hmac "HS512" "HmacSHA512"))
 
 (defn- new-rsa [jwt-alg crypto-alg key]
-  (if (instance? java.security.KeyPair key)
+  (if (instance? KeyPair key)
     (Rsa. jwt-alg crypto-alg (.getPublic key) (.getPrivate key))
     (Rsa. jwt-alg crypto-alg key nil)))
 
