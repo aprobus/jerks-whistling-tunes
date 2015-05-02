@@ -84,15 +84,23 @@ by adding them to the validate function.
 All algorithms are under in the `jerks-whistling-tunes.sign` namespace.
 
 ```clojure
+(ns my-app
+  (:require [jerks-whistling-tunes.sign :as sign]
+            [jerks-whistling-tunes.utils :refer [decode-base-64]]))
+
 (sign/hs256 "secret")
 (sign/hs384 "secret")
-(sign/hs512 "secret")
+(sign/hs512 (decode-base-64 "my-encoded-secret"))
 
 ; Supports either a java.security.KeyPair or a java.security.PublicKey
 ; KeyPairs support all operations, while a Public can only be used for verification
 (sign/rs256 public-key)
 (sign/rs384 key-pair)
 (sign/rs512 key-pair)
+
+(sign/ec256 public-key)
+(sign/ec384 key-pair)
+(sign/ec512 key-pair)
 
 sign/none
 ```

@@ -17,17 +17,8 @@
     true
     (cry/eq? actual expected)))
 
-(defn- sign-hmac
-  "Returns a string encoded with the specified HMAC algorithm and key"
-  [crypto-alg secret-spec body]
-  (let [body-bytes (convert body byte-array-class)
-        encoder (doto (Mac/getInstance crypto-alg)
-                  (.init secret-spec)
-                  (.update body-bytes))]
-    (utils/encode-base-64 (.doFinal encoder))))
-
-(defn- sign-rsa
-  "Returns a string encoded with the specified RSA algorithm and key"
+(defn- sign*
+  "Returns a string encoded with the specified algorithm and key"
   [crypto-alg private-key body]
   (let [body-bytes (convert body byte-array-class)
         signer (doto (Signature/getInstance crypto-alg)
@@ -37,8 +28,8 @@
       .sign
       utils/encode-base-64)))
 
-(defn- valid-rsa-signature?
-  "Validates an rsa signature"
+(defn- valid-signature?*
+  "Validates a signature using the public key"
   [crypto-alg public-key body signature]
   (let [body-bytes (convert body byte-array-class)
         signer (doto (Signature/getInstance crypto-alg)
@@ -63,20 +54,24 @@
   (jwt-alg [this] alg)
 
   (sign [this body]
-    (sign-hmac crypto-alg secret-spec body))
+    (let [body-bytes (convert body byte-array-class)
+          encoder (doto (Mac/getInstance crypto-alg)
+                    (.init secret-spec)
+                    (.update body-bytes))]
+      (utils/encode-base-64 (.doFinal encoder))))
 
   (valid-signature? [this body signature]
     (eq? (.sign this body) signature)))
 
-(defrecord Rsa [alg crypto-alg public-key private-key]
+(defrecord KeyPairAlg [alg crypto-alg public-key private-key]
   Algorithm
   (jwt-alg [this] alg)
 
   (sign [this body]
-    (sign-rsa crypto-alg private-key body))
+    (sign* crypto-alg private-key body))
 
   (valid-signature? [this body signature]
-    (valid-rsa-signature? crypto-alg public-key body signature)))
+    (valid-signature?* crypto-alg public-key body signature)))
 
 (defrecord None []
   Algorithm
@@ -106,28 +101,46 @@
   "Returns a HS512 signer"
   (partial new-hmac "HS512" "HmacSHA512"))
 
-(defn- new-rsa [jwt-alg crypto-alg key]
+(defn- new-key-pair-alg [jwt-alg crypto-alg key]
   (if (instance? KeyPair key)
-    (Rsa. jwt-alg crypto-alg (.getPublic key) (.getPrivate key))
-    (Rsa. jwt-alg crypto-alg key nil)))
+    (KeyPairAlg. jwt-alg crypto-alg (.getPublic key) (.getPrivate key))
+    (KeyPairAlg. jwt-alg crypto-alg key nil)))
 
 (def rs256
   "Returns a RS256 signer.
   If the key is a java.security.KeyPair, signing and verification will work.
   If the key is a public key, only verification will work."
-  (partial new-rsa "RS256" "SHA256withRSA"))
+  (partial new-key-pair-alg "RS256" "SHA256withRSA"))
 
 (def rs384
   "Returns a RS384 signer.
   If the key is a java.security.KeyPair, signing and verification will work.
   If the key is a public key, only verification will work."
-  (partial new-rsa "RS384" "SHA384withRSA"))
+  (partial new-key-pair-alg "RS384" "SHA384withRSA"))
 
 (def rs512
   "Returns a RS512 signer.
   If the key is a java.security.KeyPair, signing and verification will work.
   If the key is a public key, only verification will work."
-  (partial new-rsa "RS512" "SHA512withRSA"))
+  (partial new-key-pair-alg "RS512" "SHA512withRSA"))
+
+(def ec256
+  "Returns a EC256 signer.
+  If the key is a java.security.KeyPair, signing and verification will work.
+  If the key is a public key, only verification will work."
+  (partial new-key-pair-alg "EC256" "SHA256withECDSA"))
+
+(def ec384
+  "Returns a EC384 signer.
+  If the key is a java.security.KeyPair, signing and verification will work.
+  If the key is a public key, only verification will work."
+  (partial new-key-pair-alg "EC384" "SHA384withECDSA"))
+
+(def ec512
+  "Returns a EC512 signer.
+  If the key is a java.security.KeyPair, signing and verification will work.
+  If the key is a public key, only verification will work."
+  (partial new-key-pair-alg "EC512" "SHA512withECDSA"))
 
 (def none
   (None.))
