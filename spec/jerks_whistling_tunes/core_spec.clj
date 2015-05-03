@@ -57,19 +57,19 @@
       (should-not (valid? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.yJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.asdf")))
 
     (it "is invalid with failing checks"
-      (should-not (valid? @token (constantly false))))
+      (should-not (valid? @token (fn [a b c] true) (fn [a b c] false))))
 
     (it "is valid with no checks"
       (should (valid? @token)))
 
     (it "is valid with passing checks"
-      (should (valid? @token (constantly true)))))
+      (should (valid? @token (fn [a b c] true)))))
 
   (describe "validate"
     (with token (encode {:sub "king"} @signer))
 
     (it "is falsy with a bad token"
-      (should-not (validate @token (constantly false))))
+      (should-not (validate @token (fn [a b c] false))))
 
     (it "returns the claims when token is valid"
       (should= {:sub "king"}

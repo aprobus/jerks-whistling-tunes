@@ -36,8 +36,8 @@
   [[header-str claims-str token-signature] validation-fns]
   (let [claims (parse-segment claims-str)
         header (parse-segment header-str)
-        valid-claims? (apply every-pred (constantly true) validation-fns)]
-    (if (and claims header (valid-claims? header claims [(str header-str "." claims-str) token-signature]))
+        unsigned-token (str header-str "." claims-str)]
+    (if (and claims header (every? #(%1 header claims [unsigned-token token-signature]) validation-fns))
       claims
       false)))
 
