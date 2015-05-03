@@ -122,7 +122,7 @@
   The algorithm is picked based on the alg field in the header"
   [& sign-fns]
   (let [sign-map (safe-map-sign-fns sign-fns)]
-    (fn [{:keys [alg]} _ [header-str claims-str token-signature]]
+    (fn [{:keys [alg]} _ [unsigned-token token-signature]]
       (if-let [signer (get sign-map alg)]
-        (.valid-signature? signer (str header-str "." claims-str) token-signature)
+        (.valid-signature? signer unsigned-token token-signature)
         false))))

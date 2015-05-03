@@ -154,9 +154,9 @@
       (should-throw (signature @signer @signer)))
 
     (it "rejects mismatched signatures"
-      (should-not ((signature @signer) {:alg "custom"} {} ["header" "claims" "invalid-signature"])))
+      (should-not ((signature @signer) {:alg "custom"} {} ["header.claims" "invalid-signature"])))
 
     (it "accepts matched signatures"
-      (should ((signature @signer) {:alg "custom"} {} ["header" "claims" "signature"])))))
+      (should ((signature @signer) {:alg "custom"} {} ["header.claims" "signature"])))))
 
 (run-specs)
