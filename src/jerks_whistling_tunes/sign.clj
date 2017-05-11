@@ -3,6 +3,7 @@
             [crypto.equality :as cry]
             [jerks-whistling-tunes.utils :as utils])
   (:import java.security.KeyPair
+           java.security.PublicKey
            java.security.Signature
            java.security.SignatureException
            javax.crypto.Mac
@@ -20,7 +21,7 @@
 (defn- sign*
   "Returns a string encoded with the specified algorithm and key"
   [crypto-alg private-key body]
-  (let [body-bytes (convert body byte-array-class)
+  (let [^bytes body-bytes (convert body byte-array-class)
         signer (doto (Signature/getInstance crypto-alg)
                  (.initSign private-key)
                  (.update body-bytes))]
@@ -30,8 +31,8 @@
 
 (defn- valid-signature?*
   "Validates a signature using the public key"
-  [crypto-alg public-key body signature]
-  (let [body-bytes (convert body byte-array-class)
+  [crypto-alg ^PublicKey public-key body signature]
+  (let [^bytes body-bytes (convert body byte-array-class)
         signer (doto (Signature/getInstance crypto-alg)
                  (.initVerify public-key)
                  (.update body-bytes))
@@ -54,7 +55,7 @@
   (jwt-alg [this] alg)
 
   (sign [this body]
-    (let [body-bytes (convert body byte-array-class)
+    (let [^bytes body-bytes (convert body byte-array-class)
           encoder (doto (Mac/getInstance crypto-alg)
                     (.init secret-spec)
                     (.update body-bytes))]
@@ -85,7 +86,7 @@
 
 (defn- new-hmac
   [jwt-alg crypto-alg secret]
-  (let [raw-secret (convert secret byte-array-class)
+  (let [^bytes raw-secret (convert secret byte-array-class)
         secret-spec (SecretKeySpec. raw-secret jwt-alg)]
     (Hmac. jwt-alg crypto-alg secret-spec)))
 
@@ -103,7 +104,8 @@
 
 (defn- new-key-pair-alg [jwt-alg crypto-alg key]
   (if (instance? KeyPair key)
-    (KeyPairAlg. jwt-alg crypto-alg (.getPublic key) (.getPrivate key))
+    (let [^KeyPair kp key]
+      (KeyPairAlg. jwt-alg crypto-alg (.getPublic kp) (.getPrivate kp)))
     (KeyPairAlg. jwt-alg crypto-alg key nil)))
 
 (def rs256

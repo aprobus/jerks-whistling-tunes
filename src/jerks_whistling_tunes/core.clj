@@ -2,6 +2,7 @@
   (:require [clojure.data.json :as json]
             [clojure.string :as string]
             [crypto.equality :as cry]
+            [jerks-whistling-tunes.sign :as sign]
             [jerks-whistling-tunes.utils :as utils]))
 
 (java.security.Security/addProvider
@@ -15,19 +16,17 @@
 (defn- create-segment
   "Returns the base 64 encoded JSON representation"
   [segment]
-  (-> segment
-    json/write-str
-    (.getBytes "UTF-8")
-    (utils/encode-base-64)))
+  (let [^String json-str (json/write-str segment)]
+    (-> (.getBytes json-str "UTF-8")
+        utils/encode-base-64)))
 
 (defn- parse-segment
   "Takes a base 64 encoded string and returns the parsed JSON representation"
   [segment]
   (try
-    (-> segment
-      utils/decode-base-64
-      (String. "UTF-8")
-      (json/read-str :key-fn keyword))
+    (let [^bytes decoded (utils/decode-base-64 segment)]
+      (-> (String. decoded "UTF-8")
+          (json/read-str :key-fn keyword)))
     (catch Exception e nil)))
 
 (defn- validate*
@@ -61,10 +60,10 @@
 (defn encode
   "Encodes a map of claims as a JWT."
   [claims signer]
-  (let [header {:alg (.alg signer)
+  (let [header {:alg (sign/jwt-alg signer)
                 :typ "JWT"}
         body (str (create-segment header) "." (create-segment claims))
-        signature (.sign signer body)]
+        signature (sign/sign signer body)]
     (str body "." signature)))
 
 (defn aud
@@ -107,7 +106,7 @@
   "Takes a collection of signature functions and returns a map of the algorithm to the function."
   [signers]
   (reduce (fn [acc signer]
-            (let [alg (.alg signer)]
+            (let [alg (sign/jwt-alg signer)]
               (if (contains? acc alg)
                 (throw (Exception. (str "Duplicate algorithms not supported: " alg)))
                 (assoc acc
@@ -124,5 +123,5 @@
   (let [sign-map (safe-map-sign-fns sign-fns)]
     (fn [{:keys [alg]} _ [unsigned-token token-signature]]
       (if-let [signer (get sign-map alg)]
-        (.valid-signature? signer unsigned-token token-signature)
+        (sign/valid-signature? signer unsigned-token token-signature)
         false))))
