@@ -1,4 +1,4 @@
-(defproject jerks-whistling-tunes "0.3.1"
+(defproject jerks-whistling-tunes "0.3.2"
   :description "Clojure library for creating/verifying JWT"
   :url "https://github.com/aprobus/jerks-whistling-tunes"
   :license {:name "Eclipse Public License"
